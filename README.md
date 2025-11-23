@@ -95,7 +95,141 @@ The following environment variables are required to run the application:
 
 Make sure to set these environment variables before running the application. You can set them in a `.env` file or as system environment variables.
 
-### Use Atlas MongoDB as Vector Database
+### Promptfoo-based Testing & Security
+
+This project includes comprehensive [Promptfoo](https://www.promptfoo.dev/) integration for automated testing, security scanning, and quality assurance. Five test suites cover everything from basic regressions to full red-team assessments.
+
+#### Quick Start
+
+1. **Install Promptfoo**
+   ```bash
+   npm install --global promptfoo@latest
+   # or run ad-hoc with npx promptfoo@latest ...
+   ```
+
+2. **Start the RAG API** (ensure database is running)
+   ```bash
+   uvicorn main:app --host 0.0.0.0 --port 8000
+   ```
+
+3. **Configure environment variables**
+   ```powershell
+   $env:PROMPTFOO_RAG_BASE_URL = "http://127.0.0.1:8000"
+   $env:PROMPTFOO_RAG_JWT = "<your_jwt_token>"  # if auth enabled
+   $env:OPENAI_API_KEY = "<your_key>"           # for LLM-graded tests
+   ```
+
+4. **Run test suites**
+   ```bash
+   # Quick baseline regression tests
+   npx promptfoo@latest eval --config promptfoo.config.yaml
+   
+   # Test all API endpoints (/query, /embed, /text)
+   npx promptfoo@latest eval --config promptfoo.multi-endpoint.yaml
+   
+   # Advanced guardrails (factuality, PII, policy compliance)
+   npx promptfoo@latest eval --config promptfoo.guardrails.yaml
+   
+   # Focused RAG security red team
+   npx promptfoo@latest redteam run --config promptfoo.redteam.yaml
+   
+   # Comprehensive security scan (40+ attack types)
+   npx promptfoo@latest redteam run --config promptfoo.redteam-comprehensive.yaml
+   ```
+
+5. **View results**
+   - HTML reports are auto-generated (path shown in terminal)
+   - Or run: `npx promptfoo@latest view`
+
+#### Test Suites Overview
+
+| Config File | Purpose | Coverage |
+|-------------|---------|----------|
+| `promptfoo.config.yaml` | Baseline regressions | Basic query validation, leak prevention |
+| `promptfoo.multi-endpoint.yaml` | Multi-endpoint tests | `/query`, `/embed`, `/text` endpoints |
+| `promptfoo.guardrails.yaml` | Quality & policy | LLM-graded factuality, PII, toxicity, RBAC |
+| `promptfoo.performance.yaml` | Performance & load | Latency, cost, concurrency, caching |
+| `promptfoo.dataset-driven.yaml` | Data-driven testing | CSV/YAML datasets, custom graders |
+| `promptfoo.compare.yaml` | A/B comparison | Compare different RAG configurations |
+| `promptfoo.redteam.yaml` | RAG security | 7 plugins, RAG-specific attacks |
+| `promptfoo.redteam-comprehensive.yaml` | Full red team | 40+ plugins, OWASP/NIST/MITRE compliance |
+
+#### NPM Scripts (Convenience Commands)
+
+```bash
+# Quality & Regression Tests
+npm run test:baseline          # Quick baseline checks
+npm run test:multi-endpoint    # All endpoint tests
+npm run test:guardrails        # LLM-graded quality
+npm run test:quality           # All quality tests combined
+
+# Performance & Data
+npm run test:performance       # Latency, cost, concurrency
+npm run test:dataset           # CSV-driven test cases
+npm run test:compare           # A/B config comparison
+
+# Security Tests
+npm run test:redteam           # Focused red team
+npm run test:redteam:full      # Comprehensive scan
+npm run test:redteam:custom    # Custom RAG attack plugin
+npm run test:security          # All security tests
+
+# Full Suites
+npm run test:all               # All eval tests
+npm run test:nightly           # Complete nightly suite
+
+# Utilities
+npm run view                   # Open web UI viewer
+npm run view:latest            # View latest results
+npm run cache:clear            # Clear Promptfoo cache
+npm run clean                  # Remove output files
+```
+
+#### Custom Providers
+
+Three Python providers enable endpoint-specific testing:
+- `promptfoo/providers/rag_http_target.py` – `/query` endpoint
+- `promptfoo/providers/rag_embed_target.py` – `/embed` file uploads
+- `promptfoo/providers/rag_text_target.py` – `/text` extraction
+
+All providers are configurable via environment variables (no code changes needed).
+
+#### Security Coverage
+
+Red team suites test for:
+- **RAG-specific**: Document exfiltration, vector poisoning, prompt extraction, embedding attacks
+- **Authorization**: BOLA/BFLA, RBAC, cross-session leaks, cross-tenant isolation
+- **Injection**: Prompt, SQL, shell, indirect injection
+- **Privacy**: PII leaks (direct, session, social engineering, API/DB)
+- **Network**: SSRF, debug access
+- **Business logic**: Unauthorized commitments, competitor endorsements
+- **Compliance**: OWASP LLM/API Top 10, NIST AI RMF, MITRE ATLAS
+
+#### Advanced Features
+
+**Custom Graders**: Python-based quality scoring for RAG responses
+- `promptfoo/graders/rag_quality.py` – Multi-dimensional quality analysis (relevance, completeness, conciseness, factuality)
+
+**Custom Plugins**: RAG-specific attack patterns
+- `promptfoo/plugins/custom-rag-attacks.yaml` – Vector database exploits, semantic collision, metadata manipulation
+
+**Dataset Testing**: CSV/YAML-driven test cases
+- `promptfoo/datasets/sample_queries.csv` – Sample query variations
+- `promptfoo/datasets/edge_cases.yaml` – Boundary conditions and error scenarios
+
+**Global Configuration**: `.promptfoorc.yaml` sets defaults for:
+- Output paths, caching, telemetry preferences
+- Default timeouts, concurrency limits
+- Environment variable presets
+
+#### Documentation
+
+See [`promptfoo/README.md`](./promptfoo/README.md) for:
+- Detailed test suite descriptions
+- Environment variable reference
+- Extending tests with custom cases/graders
+- Troubleshooting guide
+- Best practices### Use Atlas MongoDB as Vector Database
 
 Instead of using the default pgvector, we could use [Atlas MongoDB](https://www.mongodb.com/products/platform/atlas-vector-search) as the vector database. To do so, set the following environment variables
 
@@ -178,3 +312,4 @@ pip install pre-commit
 pre-commit install
 ```
 
+# latest_rag
