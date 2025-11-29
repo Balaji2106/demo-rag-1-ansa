@@ -36,7 +36,7 @@ def get_gemini_client():
         raise ValueError("GEMINI_API_KEY environment variable not set")
 
     genai.configure(api_key=api_key)
-    return genai.GenerativeModel('gemini-pro')
+    return genai.GenerativeModel('gemini-1.5-pro')
 
 
 def format_sources_for_context(sources: List[tuple]) -> str:
