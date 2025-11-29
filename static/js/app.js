@@ -32,7 +32,22 @@ const elements = {
     docModal: document.getElementById('docModal'),
     modalTitle: document.getElementById('modalTitle'),
     modalBody: document.getElementById('modalBody'),
-    closeModal: document.getElementById('closeModal')
+    closeModal: document.getElementById('closeModal'),
+    // Advanced RAG Operations
+    ragOpsHeader: document.getElementById('ragOpsHeader'),
+    ragOpsContent: document.getElementById('ragOpsContent'),
+    embedFile: document.getElementById('embedFile'),
+    embedFileId: document.getElementById('embedFileId'),
+    embedEntityId: document.getElementById('embedEntityId'),
+    generateEmbedId: document.getElementById('generateEmbedId'),
+    directEmbedBtn: document.getElementById('directEmbedBtn'),
+    queryText: document.getElementById('queryText'),
+    queryFileId: document.getElementById('queryFileId'),
+    queryEntityId: document.getElementById('queryEntityId'),
+    queryK: document.getElementById('queryK'),
+    directQueryBtn: document.getElementById('directQueryBtn'),
+    ragResults: document.getElementById('ragResults'),
+    ragResultsContent: document.getElementById('ragResultsContent')
 };
 
 // Initialize App
@@ -76,6 +91,12 @@ function setupEventListeners() {
     elements.docModal.addEventListener('click', (e) => {
         if (e.target === elements.docModal) closeModal();
     });
+
+    // Advanced RAG Operations
+    elements.ragOpsHeader.addEventListener('click', toggleRagOpsSection);
+    elements.generateEmbedId.addEventListener('click', generateAndSetEmbedId);
+    elements.directEmbedBtn.addEventListener('click', handleDirectEmbed);
+    elements.directQueryBtn.addEventListener('click', handleDirectQuery);
 }
 
 // File Upload Handlers
@@ -501,6 +522,200 @@ function scrollToBottom() {
 // Modal Functions
 function closeModal() {
     elements.docModal.classList.add('hidden');
+}
+
+// Advanced RAG Operations Functions
+function toggleRagOpsSection() {
+    const content = elements.ragOpsContent;
+    const icon = elements.ragOpsHeader.querySelector('.toggle-icon');
+
+    if (content.classList.contains('expanded')) {
+        content.classList.remove('expanded');
+        icon.classList.remove('rotated');
+    } else {
+        content.classList.add('expanded');
+        icon.classList.add('rotated');
+    }
+}
+
+function generateAndSetEmbedId() {
+    const fileId = generateFileId();
+    elements.embedFileId.value = fileId;
+}
+
+async function handleDirectEmbed() {
+    const file = elements.embedFile.files[0];
+    const fileId = elements.embedFileId.value.trim();
+    const entityId = elements.embedEntityId.value.trim();
+
+    if (!file) {
+        showRagError('Please select a file to embed');
+        return;
+    }
+
+    if (!fileId) {
+        showRagError('Please provide a File ID (or click Generate)');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('file_id', fileId);
+    if (entityId) {
+        formData.append('entity_id', entityId);
+    }
+
+    elements.directEmbedBtn.disabled = true;
+    elements.directEmbedBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Embedding...';
+
+    try {
+        const response = await fetch('/embed', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to embed document');
+        }
+
+        const result = await response.json();
+
+        showRagSuccess(`Document embedded successfully!<br>
+            <strong>File ID:</strong> ${fileId}<br>
+            <strong>Filename:</strong> ${result.filename}<br>
+            <strong>Type:</strong> ${result.known_type || 'unknown'}`);
+
+        // Clear form
+        elements.embedFile.value = '';
+        elements.embedFileId.value = '';
+
+        // Reload documents list
+        await loadDocuments();
+
+    } catch (error) {
+        console.error('Embed error:', error);
+        showRagError(`Failed to embed: ${error.message}`);
+    } finally {
+        elements.directEmbedBtn.disabled = false;
+        elements.directEmbedBtn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Embed Document';
+    }
+}
+
+async function handleDirectQuery() {
+    const query = elements.queryText.value.trim();
+    const fileId = elements.queryFileId.value.trim();
+    const entityId = elements.queryEntityId.value.trim();
+    const k = parseInt(elements.queryK.value);
+
+    if (!query) {
+        showRagError('Please enter a query');
+        return;
+    }
+
+    if (!fileId) {
+        showRagError('Please provide a File ID');
+        return;
+    }
+
+    elements.directQueryBtn.disabled = true;
+    elements.directQueryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Querying...';
+
+    try {
+        const requestBody = {
+            query: query,
+            file_id: fileId,
+            k: k
+        };
+
+        if (entityId) {
+            requestBody.entity_id = entityId;
+        }
+
+        const response = await fetch('/query', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Query failed');
+        }
+
+        const results = await response.json();
+        displayQueryResults(results, query, fileId);
+
+    } catch (error) {
+        console.error('Query error:', error);
+        showRagError(`Query failed: ${error.message}`);
+    } finally {
+        elements.directQueryBtn.disabled = false;
+        elements.directQueryBtn.innerHTML = '<i class="fas fa-search"></i> Query Documents';
+    }
+}
+
+function displayQueryResults(results, query, fileId) {
+    elements.ragResults.classList.remove('hidden');
+
+    if (!results || results.length === 0) {
+        elements.ragResultsContent.innerHTML = `
+            <div class="error-message">
+                No results found for query "${query}" in file "${fileId}"
+            </div>
+        `;
+        return;
+    }
+
+    let html = `
+        <div class="success-message" style="margin-bottom: 1rem;">
+            Found ${results.length} result(s) for query: <strong>"${query}"</strong>
+        </div>
+    `;
+
+    results.forEach((item, idx) => {
+        const [document, score] = item;
+        const content = document.page_content || document.content || 'No content';
+        const metadata = document.metadata || {};
+
+        html += `
+            <div class="result-item">
+                <div class="result-meta">
+                    <strong>Result ${idx + 1}</strong> |
+                    Score: <span class="result-score">${score.toFixed(4)}</span>
+                    ${metadata.page ? ` | Page: ${metadata.page}` : ''}
+                </div>
+                <div class="result-content">${truncateText(content, 200)}</div>
+            </div>
+        `;
+    });
+
+    elements.ragResultsContent.innerHTML = html;
+
+    // Scroll to results
+    elements.ragResults.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function showRagSuccess(message) {
+    elements.ragResults.classList.remove('hidden');
+    elements.ragResultsContent.innerHTML = `
+        <div class="success-message">${message}</div>
+    `;
+    setTimeout(() => {
+        elements.ragResults.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
+}
+
+function showRagError(message) {
+    elements.ragResults.classList.remove('hidden');
+    elements.ragResultsContent.innerHTML = `
+        <div class="error-message">${message}</div>
+    `;
+    setTimeout(() => {
+        elements.ragResults.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
 }
 
 // Utility Functions
