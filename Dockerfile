@@ -12,7 +12,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
 
 # Download standard NLTK data, to prevent unstructured from downloading packages at runtime
 RUN python -m nltk.downloader -d /app/nltk_data punkt_tab averaged_perceptron_tagger
