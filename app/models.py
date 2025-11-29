@@ -42,3 +42,24 @@ class QueryMultipleBody(BaseModel):
     query: str
     file_ids: List[str]
     k: int = 4
+
+
+class ChatRequest(BaseModel):
+    query: str
+    file_id: str
+    model: str = "azure-gpt4o-mini"
+    k: int = 4
+    temperature: float = 0.7
+    entity_id: Optional[str] = None
+
+
+class SourceDocument(BaseModel):
+    content: str
+    score: float
+    metadata: Optional[dict] = {}
+
+
+class ChatResponse(BaseModel):
+    answer: str
+    sources: List[SourceDocument]
+    model_used: str

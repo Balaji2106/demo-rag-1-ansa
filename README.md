@@ -1,24 +1,198 @@
-﻿# ID-based RAG FastAPI
+﻿# 🤖 RAG Application with Interactive Chatbot UI
 
-## Overview
-This project integrates Langchain with FastAPI in an Asynchronous, Scalable manner, providing a framework for document indexing and retrieval, using PostgreSQL/pgvector.
+## 🌟 Overview
 
-Files are organized into embeddings by `file_id`. The primary use case is for integration with [LibreChat](https://librechat.ai), but this simple API can be used for any ID-based use case.
+This project is a comprehensive **Retrieval-Augmented Generation (RAG)** application that combines powerful document analysis with an intuitive chatbot interface. Built with FastAPI and Langchain, it provides enterprise-grade document processing, vector search, and AI-powered question answering.
 
-The main reason to use the ID approach is to work with embeddings on a file-level. This makes for targeted queries when combined with file metadata stored in a database, such as is done by LibreChat.
+### 🎯 What's New
 
-The API will evolve over time to employ different querying/re-ranking methods, embedding models, and vector stores.
+**Interactive Chatbot UI** - A beautiful web interface for document upload and conversational querying:
+- 🎨 Modern, responsive design with dark theme
+- 📁 Drag-and-drop document upload
+- 💬 Real-time chat with your documents
+- 🤖 Multiple AI models (Azure GPT-4o-mini, Google Gemini)
+- 📊 Source citations with relevance scores
+- ⚙️ Adjustable parameters (temperature, retrieval count)
 
-## Features
-- **Document Management**: Methods for adding, retrieving, and deleting documents.
-- **Vector Store**: Utilizes Langchain's vector store for efficient document retrieval.
-- **Asynchronous Support**: Offers async operations for enhanced performance.
+**Access the UI:** Simply start the server and navigate to `http://localhost:8000`
 
-## Setup
+### 🔑 Key Capabilities
+
+- **Interactive Web UI**: Upload documents and chat with them through an elegant interface
+- **Multiple AI Models**: Azure OpenAI GPT-4o-mini and Google Gemini support
+- **Flexible Vector Storage**: PostgreSQL/pgvector or MongoDB Atlas
+- **Multiple Embedding Providers**: Azure, OpenAI, Gemini, HuggingFace, Ollama, Bedrock, VertexAI
+- **Security Testing**: Comprehensive Promptfoo integration with OWASP/NIST/MITRE compliance
+- **Production-Ready**: Async operations, thread pooling, error handling
+- **RESTful API**: Well-documented endpoints for programmatic access
+
+### 📚 Use Cases
+
+1. **Document Q&A**: Upload PDFs, DOCX, or TXT files and ask questions
+2. **Research Assistant**: Query across multiple research papers
+3. **Knowledge Base**: Build a searchable knowledge base from your documents
+4. **LibreChat Integration**: Use as a RAG backend for LibreChat
+5. **API Integration**: Programmatic access for custom applications
+
+## ✨ Features
+
+### 🎨 Interactive Chatbot UI
+- **Document Upload**: Drag-and-drop or click to upload (PDF, DOCX, TXT, MD, CSV, XLSX, PPTX)
+- **Chat Interface**: Real-time conversational interface with typing indicators
+- **Source Display**: View exact document chunks used for each answer
+- **Document Management**: Upload, select, and delete documents with ease
+- **Model Selection**: Switch between Azure GPT-4o-mini and Google Gemini
+- **Customizable Settings**: Adjust temperature, retrieval count (k), and more
+
+### 🔧 Core API Features
+- **Document Management**: Add, retrieve, and delete documents with file-level organization
+- **Vector Search**: Semantic search powered by pgvector or MongoDB Atlas
+- **RAG Chat**: AI-powered answers grounded in your documents
+- **Multiple Embeddings**: Support for 8+ embedding providers
+- **Asynchronous**: High-performance async operations with thread pooling
+
+### 🔐 Security & Testing
+- **Promptfoo Integration**: 8 comprehensive test configurations
+- **Red Team Testing**: OWASP LLM/API Top 10, NIST AI RMF, MITRE ATLAS
+- **Quality Assurance**: Custom graders for accuracy and relevance
+- **Performance Benchmarking**: Latency and cost tracking
+- **CI/CD Ready**: GitHub Actions workflows included
+
+## 📖 Documentation
+
+- **[USER_GUIDE.md](./USER_GUIDE.md)** - Complete guide for using the chatbot UI and API
+- **[PROMPTFOO_REUSABLE_GUIDE.md](./PROMPTFOO_REUSABLE_GUIDE.md)** - How to implement Promptfoo in other projects
+- **[PROMPTFOO_IMPLEMENTATION_AUDIT.md](./PROMPTFOO_IMPLEMENTATION_AUDIT.md)** - Security testing feature audit
+- **[.env.example](./.env.example)** - Environment variables template
+- **API Docs**: http://localhost:8000/docs (when running)
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.11+
+- PostgreSQL with pgvector extension (or MongoDB Atlas)
+- Azure OpenAI account OR Google Gemini API key
+- Node.js 18+ (for Promptfoo testing)
+
+### 1. Installation
+
+```bash
+# Clone repository
+git clone <your-repo-url>
+cd demo-rag-1-ansa
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Install Node dependencies for Promptfoo
+npm install
+```
+
+### 2. Configure Environment
+
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Edit .env with your credentials
+```
+
+**Minimum Configuration:**
+```env
+# Vector Database
+VECTOR_DB_TYPE=pgvector
+POSTGRES_DB=rag_db
+POSTGRES_USER=rag_user
+POSTGRES_PASSWORD=your_password
+DB_HOST=localhost
+
+# Embeddings (Azure recommended)
+EMBEDDINGS_PROVIDER=azure
+EMBEDDINGS_MODEL=text-embedding-3-small
+RAG_AZURE_OPENAI_API_KEY=your-azure-key
+RAG_AZURE_OPENAI_ENDPOINT=https://ai-40mini.cognitiveservices.azure.com/
+
+# Chat Models
+AZURE_CHAT_ENDPOINT=https://ai-40mini.cognitiveservices.azure.com/
+AZURE_CHAT_API_KEY=your-azure-key
+GEMINI_API_KEY=your-gemini-key  # Optional
+```
+
+### 3. Start Database
+
+```bash
+# Using Docker (recommended)
+docker compose -f db-compose.yaml up -d
+
+# Or connect to existing PostgreSQL with pgvector extension
+```
+
+### 4. Run the Application
+
+```bash
+# Start the server
+uvicorn main:app --host 0.0.0.0 --port 8000
+
+# Or with hot reload for development
+uvicorn main:app --reload
+```
+
+### 5. Access the Chatbot UI
+
+Open your browser and navigate to:
+```
+http://localhost:8000
+```
+
+You should see the interactive chatbot interface! 🎉
+
+## 💬 Using the Chatbot
+
+1. **Upload a Document**: Drag and drop or click to upload (PDF, DOCX, TXT, etc.)
+2. **Select Document**: Click the checkmark icon next to the uploaded document
+3. **Ask Questions**: Type your question in the chat box and press Enter
+4. **View Results**: Get AI-generated answers with source citations
+5. **Adjust Settings**: Change model, temperature, or retrieval parameters as needed
+
+See [USER_GUIDE.md](./USER_GUIDE.md) for detailed instructions.
+
+## 🔌 API Endpoints
+
+### Interactive UI
+- `GET /` - Chatbot web interface
+
+### Document Operations
+- `POST /embed` - Upload and embed document
+- `POST /query` - Vector similarity search
+- `POST /chat` - RAG-based chat (NEW)
+- `GET /documents` - Get documents by IDs
+- `DELETE /documents` - Delete documents
+- `GET /ids` - List all document IDs
+- `GET /health` - Health check
+
+### Example: Chat with Document
+
+```bash
+curl -X POST "http://localhost:8000/chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What are the main findings?",
+    "file_id": "your-file-id",
+    "model": "azure-gpt4o-mini",
+    "k": 4,
+    "temperature": 0.7
+  }'
+```
+
+## Setup (Detailed)
 
 ### Getting Started
 
-- **Configure `.env` file based on [section below](#environment-variables)**
+- **Configure `.env` file based on [.env.example](./.env.example)**
 - **Setup pgvector database:**
   - Run an existing PSQL/PGVector setup, or,
   - Docker: `docker compose up` (also starts RAG API)
