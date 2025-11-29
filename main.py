@@ -4,6 +4,8 @@ import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 from concurrent.futures import ThreadPoolExecutor
 
@@ -22,7 +24,7 @@ from app.config import (
     logger,
 )
 from app.middleware import security_middleware
-from app.routes import document_routes, pgvector_routes
+from app.routes import document_routes, pgvector_routes, chat_routes
 from app.services.database import PSQLDatabase, ensure_vector_indexes
 
 
@@ -73,8 +75,18 @@ app.state.PDF_EXTRACT_IMAGES = PDF_EXTRACT_IMAGES
 
 # Include routers
 app.include_router(document_routes.router)
+app.include_router(chat_routes.router)
 if debug_mode:
     app.include_router(router=pgvector_routes.router)
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+@app.get("/")
+async def root():
+    """Serve the main chatbot UI."""
+    return FileResponse("static/index.html")
 
 
 @app.exception_handler(RequestValidationError)
